@@ -10,25 +10,35 @@ if uploaded_file:
         # Membaca data CSV
         data = pd.read_csv(uploaded_file)
 
-        # Pastikan ada kolom 'time'
-        if 'time' not in data.columns:
+        # Memeriksa jika kolom 'time' ada dengan case-insensitive
+        time_column = None
+        for col in data.columns:
+            if 'time' in col.lower():  # Mencari kolom yang mengandung 'time' tanpa memperhatikan kapitalisasi
+                time_column = col
+                break
+
+        # Jika tidak ada kolom time ditemukan
+        if time_column is None:
             st.error("File CSV tidak mengandung kolom 'time'. Pastikan kolom waktu ada dalam data.")
         else:
+            # Menampilkan nama kolom 'time' yang ditemukan
+            st.write(f"Kolom waktu yang ditemukan: {time_column}")
+
             # Ambil kolom yang dimulai dengan 'V' (misalnya V1, V2, ..., Vn)
             v_columns = [col for col in data.columns if col.startswith('V')]  # Kolom yang dimulai dengan 'V'
             if not v_columns:
                 st.error("File CSV tidak mengandung kolom yang dimulai dengan 'V'.")
             else:
                 # Menampilkan kolom 'time' dan fitur 'V1-Vn'
-                st.write(f"Menampilkan data untuk kolom 'time' dan fitur V1-Vn:")
-                st.dataframe(data[['time'] + v_columns])
+                st.write(f"Menampilkan data untuk kolom '{time_column}' dan fitur V1-Vn:")
+                st.dataframe(data[[time_column] + v_columns])
 
                 # Deteksi transaksi dengan nilai negatif terbanyak
                 transaction_negative_counts = {}
 
                 # Iterasi untuk setiap 'time' dan hitung jumlah nilai negatif pada kolom V
-                for time in data['time'].unique():
-                    time_data = data[data['time'] == time]
+                for time in data[time_column].unique():
+                    time_data = data[data[time_column] == time]
                     negative_counts = (time_data[v_columns] < 0).sum(axis=0)  # Hitung nilai negatif pada setiap fitur V
                     transaction_negative_counts[time] = negative_counts
 
