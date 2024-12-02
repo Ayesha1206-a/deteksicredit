@@ -11,8 +11,11 @@ model_file = 'model/fraud_detection_model.pkl'
 if not os.path.exists(model_file):
     st.error(f"File model tidak ditemukan di {model_file}. Pastikan file model tersedia.")
 else:
-    with open(model_file, 'rb') as file:
-        model = pickle.load(file)
+    try:
+        with open(model_file, 'rb') as file:
+            model = pickle.load(file)
+    except Exception as e:
+        st.error(f"Terjadi kesalahan saat memuat model: {e}")
 
     # Pengguna mengunggah file CSV
     uploaded_file = st.file_uploader("Unggah File CSV untuk Prediksi", type=["csv"])
@@ -21,16 +24,16 @@ else:
         try:
             # Membaca file CSV
             data = pd.read_csv(uploaded_file)
+            
+            # Menampilkan preview data untuk memastikan file berhasil dibaca
+            st.write("Data yang diunggah:")
+            st.dataframe(data.head())
 
             # Pastikan bahwa data memiliki kolom yang sesuai dengan model
             required_columns = ['Amount', 'V1', 'V2', 'V3']  # Sesuaikan dengan kolom yang digunakan model Anda
             if not all(col in data.columns for col in required_columns):
                 st.error(f"File CSV harus mengandung kolom: {', '.join(required_columns)}")
             else:
-                # Menampilkan data CSV yang diunggah
-                st.write("Data yang diunggah:")
-                st.dataframe(data)
-
                 # Menambahkan kolom untuk kategori prediksi berdasarkan V1, V2, V3...
                 # Mencari nilai terendah (paling negatif) di kolom V1, V2, V3
                 v_columns = ['V1', 'V2', 'V3']  # Sesuaikan dengan nama kolom V yang digunakan
@@ -42,5 +45,10 @@ else:
                 # Menampilkan hasil prediksi
                 st.write("Hasil Prediksi:")
                 st.dataframe(data)
+
+        except pd.errors.EmptyDataError:
+            st.error("File CSV yang diunggah kosong.")
+        except pd.errors.ParserError:
+            st.error("Terjadi kesalahan saat membaca file CSV. Pastikan file CSV valid dan formatnya benar.")
         except Exception as e:
             st.error(f"Terjadi kesalahan dalam memproses file: {e}")
