@@ -7,10 +7,10 @@ st.title("Analisis Transaksi Kartu Kredit dengan Prediksi Anomali")
 uploaded_file = st.file_uploader("Unggah file CSV untuk analisis", type="csv")
 if uploaded_file:
     try:
-        # Membaca data CSV
-        data = pd.read_csv(uploaded_file)
+        # Membaca file CSV hanya dengan kolom yang dibutuhkan
+        data = pd.read_csv(uploaded_file, usecols=['time'] + [col for col in pd.read_csv(uploaded_file, nrows=1).columns if col.startswith('V')])
 
-        # Memeriksa jika kolom 'time' ada dengan case-insensitive
+        # Cek apakah kolom 'time' ada dalam file
         time_column = None
         for col in data.columns:
             if 'time' in col.lower():  # Mencari kolom yang mengandung 'time' tanpa memperhatikan kapitalisasi
@@ -29,7 +29,7 @@ if uploaded_file:
             if not v_columns:
                 st.error("File CSV tidak mengandung kolom yang dimulai dengan 'V'.")
             else:
-                # Menampilkan kolom 'time' dan fitur 'V1-Vn'
+                # Menampilkan data hanya untuk kolom 'time' dan fitur 'V1-Vn' 
                 st.write(f"Menampilkan data untuk kolom '{time_column}' dan fitur V1-Vn:")
                 st.dataframe(data[[time_column] + v_columns])
 
