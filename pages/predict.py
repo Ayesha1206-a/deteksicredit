@@ -1,6 +1,5 @@
 import pickle
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 
 # Memuat model yang telah dilatih
 with open('model/fraud_detection_model.pkl', 'rb') as file:
@@ -17,19 +16,15 @@ def process_data(file):
     else:
         features = data  # Jika tidak ada kolom target, ambil semua fitur
     
-    # Normalisasi data
-    scaler = StandardScaler()
-    features_scaled = scaler.fit_transform(features)
-    
-    return features_scaled, data
+    return features, data
 
 # Fungsi untuk memprediksi dan menampilkan hasil
 def predict(file):
     # Proses data
-    features_scaled, data = process_data(file)
+    features, data = process_data(file)
     
     # Prediksi menggunakan model
-    predictions = model.predict(features_scaled)
+    predictions = model.predict(features)
     
     # Menambahkan kolom 'Prediction' untuk menunjukkan apakah transaksi fraud
     data['Prediction'] = predictions
