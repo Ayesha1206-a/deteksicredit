@@ -1,26 +1,52 @@
-import streamlit as st
 import pickle
-import numpy as np
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
-st.title("Prediksi Transaksi Kartu Kredit Palsu")
-
-# Muat model yang sudah dilatih
-model_file = 'model/fraud_detection_model.pkl'
-with open(model_file, 'rb') as file:
+# Memuat model yang telah dilatih
+with open('model/fraud_detection_model.pkl', 'rb') as file:
     model = pickle.load(file)
 
-# Input data prediksi
-amount = st.number_input("Jumlah Transaksi (Amount)")
-v1 = st.number_input("Fitur V1", min_value=-100.0, max_value=100.0)
-v2 = st.number_input("Fitur V2", min_value=-100.0, max_value=100.0)
-# Tambahkan input untuk fitur lain dari dataset
+# Fungsi untuk memproses data
+def process_data(file):
+    # Memuat data CSV
+    data = pd.read_csv(file)
+    
+    # Memastikan bahwa data yang dimuat memiliki kolom yang diinginkan
+    if 'Class' in data.columns:
+        features = data.drop(['Class'], axis=1)  # Menghapus kolom target 'Class'
+    else:
+        features = data  # Jika tidak ada kolom target, ambil semua fitur
+    
+    # Normalisasi data
+    scaler = StandardScaler()
+    features_scaled = scaler.fit_transform(features)
+    
+    return features_scaled, data
 
-# Proses prediksi
-if st.button("Prediksi"):
-    try:
-        input_data = np.array([[amount, v1, v2]])  # Sesuaikan dengan fitur yang ada
-        prediction = model.predict(input_data)
-        result = "Transaksi Palsu" if prediction[0] == 1 else "Transaksi Valid"
-        st.write(f"Hasil Prediksi: {result}")
-    except Exception as e:
-        st.error(f"Terjadi kesalahan: {e}")
+# Fungsi untuk memprediksi dan menampilkan hasil
+def predict(file):
+    # Proses data
+    features_scaled, data = process_data(file)
+    
+    # Prediksi menggunakan model
+    predictions = model.predict(features_scaled)
+    
+    # Menambahkan kolom 'Prediction' untuk menunjukkan apakah transaksi fraud
+    data['Prediction'] = predictions
+    data['Prediction'] = data['Prediction'].map({0: 'Valid', 1: 'Fraud'})
+    
+    return data
+
+# Menyediakan path file CSV
+file_path = input("Masukkan path file CSV yang berisi transaksi: ")
+
+# Prediksi hasil untuk file yang dimasukkan
+result = predict(file_path)
+
+# Menampilkan hasil prediksi
+print("Hasil Prediksi (Valid/Fraud):")
+print(result[['TransactionID', 'Prediction']])
+
+# Menyimpan hasil prediksi ke file baru
+result.to_csv('predictions.csv', index=False)
+print("Hasil prediksi telah disimpan ke 'predictions.csv'.")
