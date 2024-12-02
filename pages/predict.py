@@ -10,46 +10,47 @@ if uploaded_file:
         # Membaca data CSV
         data = pd.read_csv(uploaded_file)
 
-        # Pastikan ada kolom yang menunjukkan waktu, misalnya 'timestamp'
-        if 'timestamp' not in data.columns:
-            st.error("File CSV tidak mengandung kolom 'timestamp'. Pastikan kolom waktu ada dalam data.")
+        # Pastikan ada kolom 'time'
+        if 'time' not in data.columns:
+            st.error("File CSV tidak mengandung kolom 'time'. Pastikan kolom waktu ada dalam data.")
         else:
+            # Ambil kolom yang dimulai dengan 'V' (misalnya V1, V2, ..., Vn)
             v_columns = [col for col in data.columns if col.startswith('V')]  # Kolom yang dimulai dengan 'V'
             if not v_columns:
                 st.error("File CSV tidak mengandung kolom yang dimulai dengan 'V'.")
             else:
-                # Menampilkan kolom 'timestamp' dan fitur 'V1-Vn'
-                st.write(f"Menampilkan data untuk kolom 'timestamp' dan fitur V1-Vn:")
-                st.dataframe(data[['timestamp'] + v_columns])
+                # Menampilkan kolom 'time' dan fitur 'V1-Vn'
+                st.write(f"Menampilkan data untuk kolom 'time' dan fitur V1-Vn:")
+                st.dataframe(data[['time'] + v_columns])
 
                 # Deteksi transaksi dengan nilai negatif terbanyak
                 transaction_negative_counts = {}
 
-                # Iterasi untuk setiap 'timestamp' dan hitung jumlah nilai negatif pada kolom V
-                for timestamp in data['timestamp'].unique():
-                    timestamp_data = data[data['timestamp'] == timestamp]
-                    negative_counts = (timestamp_data[v_columns] < 0).sum(axis=0)  # Hitung nilai negatif pada setiap fitur V
-                    transaction_negative_counts[timestamp] = negative_counts
+                # Iterasi untuk setiap 'time' dan hitung jumlah nilai negatif pada kolom V
+                for time in data['time'].unique():
+                    time_data = data[data['time'] == time]
+                    negative_counts = (time_data[v_columns] < 0).sum(axis=0)  # Hitung nilai negatif pada setiap fitur V
+                    transaction_negative_counts[time] = negative_counts
 
                 # Mencari 'V1-Vn' dengan transaksi negatif terbanyak dalam setiap waktu
-                max_negatives_per_timestamp = {}
-                for timestamp, negative_counts in transaction_negative_counts.items():
+                max_negatives_per_time = {}
+                for time, negative_counts in transaction_negative_counts.items():
                     max_negative = negative_counts.max()
                     columns_with_max_negatives = negative_counts[negative_counts == max_negative].index.tolist()
-                    max_negatives_per_timestamp[timestamp] = {
+                    max_negatives_per_time[time] = {
                         'max_negative': max_negative,
                         'columns': columns_with_max_negatives
                     }
 
                 # Menampilkan hasil analisis dan menandai akun anomali
-                for timestamp, analysis in max_negatives_per_timestamp.items():
-                    st.write(f"\n**Waktu: {timestamp}**")
+                for time, analysis in max_negatives_per_time.items():
+                    st.write(f"\n**Waktu: {time}**")
                     st.write(f"Jumlah transaksi negatif terbanyak: {analysis['max_negative']}")
                     st.write(f"Fitur V yang memiliki transaksi negatif terbanyak: {', '.join(analysis['columns'])}")
 
                     # Menandai akun sebagai anomali jika fitur V memiliki transaksi negatif terbanyak
                     for col in analysis['columns']:
-                        st.write(f"Akun yang menggunakan {col} dianggap **anomali** pada waktu {timestamp}")
+                        st.write(f"Akun yang menggunakan {col} dianggap **anomali** pada waktu {time}")
 
     except Exception as e:
         st.error(f"Terjadi kesalahan dalam memproses file: {e}")
