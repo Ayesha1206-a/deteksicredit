@@ -1,26 +1,46 @@
 import streamlit as st
 import pickle
 import numpy as np
+import pandas as pd
+import os
 
 st.title("Prediksi Transaksi Kartu Kredit Palsu")
 
-# Muat model yang sudah dilatih
+# Muat model yang sudah dilatih dengan pengecekan file
 model_file = 'model/fraud_detection_model.pkl'
-with open(model_file, 'rb') as file:
-    model = pickle.load(file)
+if not os.path.exists(model_file):
+    st.error(f"File model tidak ditemukan di {model_file}. Pastikan file model tersedia.")
+else:
+    with open(model_file, 'rb') as file:
+        model = pickle.load(file)
 
-# Input data prediksi
-amount = st.number_input("Jumlah Transaksi (Amount)")
-v1 = st.number_input("Fitur V1", min_value=-100.0, max_value=100.0)
-v2 = st.number_input("Fitur V2", min_value=-100.0, max_value=100.0)
-# Tambahkan input untuk fitur lain dari dataset
+    # Pengguna mengunggah file CSV
+    uploaded_file = st.file_uploader("Unggah File CSV untuk Prediksi", type=["csv"])
+    
+    if uploaded_file is not None:
+        try:
+            # Membaca file CSV
+            data = pd.read_csv(uploaded_file)
 
-# Proses prediksi
-if st.button("Prediksi"):
-    try:
-        input_data = np.array([[amount, v1, v2]])  # Sesuaikan dengan fitur yang ada
-        prediction = model.predict(input_data)
-        result = "Transaksi Palsu" if prediction[0] == 1 else "Transaksi Valid"
-        st.write(f"Hasil Prediksi: {result}")
-    except Exception as e:
-        st.error(f"Terjadi kesalahan: {e}")
+            # Pastikan bahwa data memiliki kolom yang sesuai dengan model
+            required_columns = ['Amount', 'V1', 'V2', 'V3']  # Sesuaikan dengan kolom yang digunakan model Anda
+            if not all(col in data.columns for col in required_columns):
+                st.error(f"File CSV harus mengandung kolom: {', '.join(required_columns)}")
+            else:
+                # Menampilkan data CSV yang diunggah
+                st.write("Data yang diunggah:")
+                st.dataframe(data)
+
+                # Menambahkan kolom untuk kategori prediksi berdasarkan V1, V2, V3...
+                # Mencari nilai terendah (paling negatif) di kolom V1, V2, V3
+                v_columns = ['V1', 'V2', 'V3']  # Sesuaikan dengan nama kolom V yang digunakan
+                data['Min_V'] = data[v_columns].min(axis=1)  # Mencari nilai terendah pada setiap baris
+                
+                # Tentukan kategori berdasarkan nilai V terendah
+                data['Prediksi'] = data['Min_V'].apply(lambda x: "Transaksi Palsu" if x < -1 else "Transaksi Valid")
+
+                # Menampilkan hasil prediksi
+                st.write("Hasil Prediksi:")
+                st.dataframe(data)
+        except Exception as e:
+            st.error(f"Terjadi kesalahan dalam memproses file: {e}")
