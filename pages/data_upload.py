@@ -4,7 +4,7 @@ import pandas as pd
 st.title("Visualisasi Data")
 
 # Unggah file CSV
-uploaded_file = st.file_uploader("Unggah file CSV untuk visualisasi", type="csv")
+uploaded_file = st.file_uploader("Unggah file CSV untuk menampilkan data credit card secara keseluruhan", type="csv")
 
 @st.cache_data
 def load_data(file):
