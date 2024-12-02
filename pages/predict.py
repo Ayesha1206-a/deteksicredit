@@ -7,29 +7,30 @@ st.title("Analisis Transaksi Kartu Kredit dengan Prediksi Anomali")
 uploaded_file = st.file_uploader("Unggah file CSV untuk analisis", type="csv")
 if uploaded_file:
     try:
-        # Membaca file CSV hanya dengan kolom yang dibutuhkan
-        data = pd.read_csv(uploaded_file, usecols=['time'] + [col for col in pd.read_csv(uploaded_file, nrows=1).columns if col.startswith('V')])
+        # Membaca data CSV tanpa memilih kolom dulu, untuk memastikan format yang benar
+        data = pd.read_csv(uploaded_file)
 
-        # Cek apakah kolom 'time' ada dalam file
+        # Menampilkan kolom yang ada di dalam file untuk debugging
+        st.write("Kolom yang ditemukan dalam file CSV:", data.columns)
+
+        # Memeriksa apakah kolom 'time' ada di dalam file
         time_column = None
         for col in data.columns:
-            if 'time' in col.lower():  # Mencari kolom yang mengandung 'time' tanpa memperhatikan kapitalisasi
+            if 'time' in col.lower():  # Menemukan kolom yang mengandung 'time' (case-insensitive)
                 time_column = col
                 break
 
-        # Jika tidak ada kolom time ditemukan
         if time_column is None:
             st.error("File CSV tidak mengandung kolom 'time'. Pastikan kolom waktu ada dalam data.")
         else:
-            # Menampilkan nama kolom 'time' yang ditemukan
             st.write(f"Kolom waktu yang ditemukan: {time_column}")
 
-            # Ambil kolom yang dimulai dengan 'V' (misalnya V1, V2, ..., Vn)
-            v_columns = [col for col in data.columns if col.startswith('V')]  # Kolom yang dimulai dengan 'V'
+            # Menentukan kolom 'V1', 'V2', ..., 'Vn' (kolom yang dimulai dengan 'V')
+            v_columns = [col for col in data.columns if col.startswith('V')]
             if not v_columns:
                 st.error("File CSV tidak mengandung kolom yang dimulai dengan 'V'.")
             else:
-                # Menampilkan data hanya untuk kolom 'time' dan fitur 'V1-Vn' 
+                # Menampilkan data hanya untuk kolom 'time' dan fitur 'V1-Vn'
                 st.write(f"Menampilkan data untuk kolom '{time_column}' dan fitur V1-Vn:")
                 st.dataframe(data[[time_column] + v_columns])
 
