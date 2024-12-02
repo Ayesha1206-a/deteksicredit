@@ -1,12 +1,11 @@
 import streamlit as st
 import pickle
-import numpy as np
 import pandas as pd
 import os
 
 st.title("Prediksi Transaksi Kartu Kredit Palsu")
 
-# Muat model yang sudah dilatih dengan pengecekan file
+# Muat model yang sudah dilatih
 model_file = 'model/fraud_detection_model.pkl'
 if not os.path.exists(model_file):
     st.error(f"File model tidak ditemukan di {model_file}. Pastikan file model tersedia.")
@@ -19,7 +18,7 @@ else:
 
     # Pengguna mengunggah file CSV
     uploaded_file = st.file_uploader("Unggah File CSV untuk Prediksi", type=["csv"])
-    
+
     if uploaded_file is not None:
         try:
             # Membaca file CSV
@@ -30,17 +29,19 @@ else:
             st.dataframe(data.head())
 
             # Pastikan bahwa data memiliki kolom yang sesuai dengan model
-            required_columns = ['Amount', 'V1', 'V2', 'V3']  # Sesuaikan dengan kolom yang digunakan model Anda
+            # Sesuaikan kolom input berdasarkan model yang telah dilatih
+            required_columns = ['Amount', 'V1', 'V2', 'V3']  # Ganti dengan kolom yang sesuai untuk model Anda
             if not all(col in data.columns for col in required_columns):
                 st.error(f"File CSV harus mengandung kolom: {', '.join(required_columns)}")
             else:
-                # Menambahkan kolom untuk kategori prediksi berdasarkan V1, V2, V3...
-                # Mencari nilai terendah (paling negatif) di kolom V1, V2, V3
-                v_columns = ['V1', 'V2', 'V3']  # Sesuaikan dengan nama kolom V yang digunakan
-                data['Min_V'] = data[v_columns].min(axis=1)  # Mencari nilai terendah pada setiap baris
-                
-                # Tentukan kategori berdasarkan nilai V terendah
-                data['Prediksi'] = data['Min_V'].apply(lambda x: "Transaksi Palsu" if x < -1 else "Transaksi Valid")
+                # Membuat data input untuk prediksi
+                input_data = data[required_columns]  # Ambil hanya kolom yang dibutuhkan model
+
+                # Melakukan prediksi
+                predictions = model.predict(input_data)
+
+                # Menambahkan hasil prediksi ke data
+                data['Prediksi'] = ['Transaksi Palsu' if pred == 1 else 'Transaksi Valid' for pred in predictions]
 
                 # Menampilkan hasil prediksi
                 st.write("Hasil Prediksi:")
